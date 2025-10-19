@@ -1,0 +1,10 @@
+{
+  "name": "proposal-generator",
+  "version": "1.0.0",
+  "description": "提案書自動生成システム",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
