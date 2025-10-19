@@ -47,10 +47,37 @@ export default async function handler(req, res) {
 
 必須機能:
 - 画像アップロード機能（各ページに配置）
-- PDF生成機能（html2canvas + jsPDF使用）
 - 編集可能なキャプション機能
 
-CDN:
+PDF生成機能（重要）:
+const canvas = await html2canvas(container, {
+  scale: 2,
+  useCORS: true,
+  logging: false,
+  backgroundColor: '#ffffff',
+  width: 1200,
+  height: container.scrollHeight,
+  windowWidth: 1200,
+  windowHeight: container.scrollHeight
+});
+
+const imgData = canvas.toDataURL('image/jpeg', 0.95);
+const { jsPDF } = window.jspdf;
+
+// A4横向きで正しいアスペクト比
+const pdfWidth = 297;
+const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+const pdf = new jsPDF({
+  orientation: 'landscape',
+  unit: 'mm',
+  format: [pdfWidth, pdfHeight],
+  compress: true
+});
+
+pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+
+CDN（必須）:
 - html2canvas: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
 - jsPDF: https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
 
