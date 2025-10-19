@@ -171,6 +171,167 @@
         URL.revokeObjectURL(url);
       };
 
+      // 配列項目の追加・削除・更新用の関数
+      const addIssue = () => {
+        setFormData({
+          ...formData,
+          issues: [...formData.issues, { icon: '🔍', title: '', description: '' }]
+        });
+      };
+
+      const removeIssue = (index) => {
+        setFormData({
+          ...formData,
+          issues: formData.issues.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateIssue = (index, field, value) => {
+        const newIssues = [...formData.issues];
+        newIssues[index][field] = value;
+        setFormData({ ...formData, issues: newIssues });
+      };
+
+      const addSolution = () => {
+        setFormData({
+          ...formData,
+          solutions: [...formData.solutions, { icon: '📊', title: '', description: '' }]
+        });
+      };
+
+      const removeSolution = (index) => {
+        setFormData({
+          ...formData,
+          solutions: formData.solutions.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateSolution = (index, field, value) => {
+        const newSolutions = [...formData.solutions];
+        newSolutions[index][field] = value;
+        setFormData({ ...formData, solutions: newSolutions });
+      };
+
+      const addTechStack = () => {
+        setFormData({
+          ...formData,
+          techStack: [...formData.techStack, { name: '', description: '' }]
+        });
+      };
+
+      const removeTechStack = (index) => {
+        setFormData({
+          ...formData,
+          techStack: formData.techStack.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateTechStack = (index, field, value) => {
+        const newTechStack = [...formData.techStack];
+        newTechStack[index][field] = value;
+        setFormData({ ...formData, techStack: newTechStack });
+      };
+
+      const addEffect = () => {
+        setFormData({
+          ...formData,
+          effects: [...formData.effects, { label: '', description: '' }]
+        });
+      };
+
+      const removeEffect = (index) => {
+        setFormData({
+          ...formData,
+          effects: formData.effects.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateEffect = (index, field, value) => {
+        const newEffects = [...formData.effects];
+        newEffects[index][field] = value;
+        setFormData({ ...formData, effects: newEffects });
+      };
+
+      const addBenefit = () => {
+        setFormData({
+          ...formData,
+          benefits: [...formData.benefits, '']
+        });
+      };
+
+      const removeBenefit = (index) => {
+        setFormData({
+          ...formData,
+          benefits: formData.benefits.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateBenefit = (index, value) => {
+        const newBenefits = [...formData.benefits];
+        newBenefits[index] = value;
+        setFormData({ ...formData, benefits: newBenefits });
+      };
+
+      const addTimeline = () => {
+        setFormData({
+          ...formData,
+          timeline: [...formData.timeline, { phase: '', duration: '', tasks: '' }]
+        });
+      };
+
+      const removeTimeline = (index) => {
+        setFormData({
+          ...formData,
+          timeline: formData.timeline.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateTimeline = (index, field, value) => {
+        const newTimeline = [...formData.timeline];
+        newTimeline[index][field] = value;
+        setFormData({ ...formData, timeline: newTimeline });
+      };
+
+      const addAdditionalCost = () => {
+        setFormData({
+          ...formData,
+          additionalCosts: [...formData.additionalCosts, { name: '', amount: '', description: '' }]
+        });
+      };
+
+      const removeAdditionalCost = (index) => {
+        setFormData({
+          ...formData,
+          additionalCosts: formData.additionalCosts.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateAdditionalCost = (index, field, value) => {
+        const newCosts = [...formData.additionalCosts];
+        newCosts[index][field] = value;
+        setFormData({ ...formData, additionalCosts: newCosts });
+      };
+
+      const addSummaryPoint = () => {
+        setFormData({
+          ...formData,
+          summaryPoints: [...formData.summaryPoints, { icon: '🎯', title: '', description: '' }]
+        });
+      };
+
+      const removeSummaryPoint = (index) => {
+        setFormData({
+          ...formData,
+          summaryPoints: formData.summaryPoints.filter((_, i) => i !== index)
+        });
+      };
+
+      const updateSummaryPoint = (index, field, value) => {
+        const newPoints = [...formData.summaryPoints];
+        newPoints[index][field] = value;
+        setFormData({ ...formData, summaryPoints: newPoints });
+      };
+
       return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-8">
           <div className="max-w-6xl mx-auto">
@@ -304,6 +465,8 @@
                 </h2>
 
                 <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4">
+                  
+                  {/* 基本情報 */}
                   <div className="border-b pb-4">
                     <h3 className="font-bold text-lg mb-3">基本情報</h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -325,14 +488,34 @@
                           onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
                         />
                       </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">メール</label>
+                        <input
+                          type="email"
+                          className="w-full p-2 border rounded"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">電話番号</label>
+                        <input
+                          type="tel"
+                          className="w-full p-2 border rounded"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        />
+                      </div>
                     </div>
                   </div>
 
+                  {/* 提案タイトル */}
                   <div className="border-b pb-4">
                     <h3 className="font-bold text-lg mb-3">提案タイトル</h3>
                     <input
                       type="text"
                       className="w-full p-2 border rounded mb-2"
+                      placeholder="メインタイトル"
                       value={formData.proposalTitle}
                       onChange={(e) => setFormData({ ...formData, proposalTitle: e.target.value })}
                     />
@@ -345,34 +528,274 @@
                     />
                   </div>
 
+                  {/* 課題 */}
                   <div className="border-b pb-4">
-                    <h3 className="font-bold text-lg mb-3">課題 ({formData.issues.length}個)</h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">課題 ({formData.issues.length}個)</h3>
+                      <button
+                        onClick={addIssue}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
                     {formData.issues.map((issue, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2">
-                        <div className="font-semibold">{issue.icon} {issue.title}</div>
-                        <div className="text-sm text-gray-600 mt-1">{issue.description}</div>
+                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <input
+                            type="text"
+                            className="w-16 p-1 border rounded text-center"
+                            placeholder="🔍"
+                            value={issue.icon}
+                            onChange={(e) => updateIssue(idx, 'icon', e.target.value)}
+                          />
+                          <button
+                            onClick={() => removeIssue(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded mb-2"
+                          placeholder="課題タイトル"
+                          value={issue.title}
+                          onChange={(e) => updateIssue(idx, 'title', e.target.value)}
+                        />
+                        <textarea
+                          className="w-full p-2 border rounded"
+                          placeholder="詳細説明"
+                          rows="3"
+                          value={issue.description}
+                          onChange={(e) => updateIssue(idx, 'description', e.target.value)}
+                        />
                       </div>
                     ))}
                   </div>
 
+                  {/* ソリューション */}
                   <div className="border-b pb-4">
-                    <h3 className="font-bold text-lg mb-3">ソリューション ({formData.solutions.length}個)</h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">ソリューション ({formData.solutions.length}個)</h3>
+                      <button
+                        onClick={addSolution}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
                     {formData.solutions.map((solution, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2">
-                        <div className="font-semibold">{solution.icon} {solution.title}</div>
-                        <div className="text-sm text-gray-600 mt-1">{solution.description}</div>
+                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <input
+                            type="text"
+                            className="w-16 p-1 border rounded text-center"
+                            placeholder="📊"
+                            value={solution.icon}
+                            onChange={(e) => updateSolution(idx, 'icon', e.target.value)}
+                          />
+                          <button
+                            onClick={() => removeSolution(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded mb-2"
+                          placeholder="ソリューション名"
+                          value={solution.title}
+                          onChange={(e) => updateSolution(idx, 'title', e.target.value)}
+                        />
+                        <textarea
+                          className="w-full p-2 border rounded"
+                          placeholder="説明"
+                          rows="2"
+                          value={solution.description}
+                          onChange={(e) => updateSolution(idx, 'description', e.target.value)}
+                        />
                       </div>
                     ))}
                   </div>
 
+                  {/* システム構成 */}
+                  <div className="border-b pb-4">
+                    <h3 className="font-bold text-lg mb-3">システム構成</h3>
+                    <textarea
+                      className="w-full p-2 border rounded"
+                      placeholder="システム構成の説明"
+                      rows="4"
+                      value={formData.systemArchitecture}
+                      onChange={(e) => setFormData({ ...formData, systemArchitecture: e.target.value })}
+                    />
+                  </div>
+
+                  {/* 技術スタック */}
+                  <div className="border-b pb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">技術スタック ({formData.techStack.length}個)</h3>
+                      <button
+                        onClick={addTechStack}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
+                    {formData.techStack.map((tech, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <input
+                            type="text"
+                            className="flex-1 p-2 border rounded"
+                            placeholder="技術名"
+                            value={tech.name}
+                            onChange={(e) => updateTechStack(idx, 'name', e.target.value)}
+                          />
+                          <button
+                            onClick={() => removeTechStack(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold ml-2"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          placeholder="説明"
+                          value={tech.description}
+                          onChange={(e) => updateTechStack(idx, 'description', e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 導入効果 */}
+                  <div className="border-b pb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">導入効果 ({formData.effects.length}個)</h3>
+                      <button
+                        onClick={addEffect}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
+                    {formData.effects.map((effect, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <input
+                            type="text"
+                            className="flex-1 p-2 border rounded"
+                            placeholder="効果ラベル"
+                            value={effect.label}
+                            onChange={(e) => updateEffect(idx, 'label', e.target.value)}
+                          />
+                          <button
+                            onClick={() => removeEffect(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold ml-2"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <textarea
+                          className="w-full p-2 border rounded"
+                          placeholder="効果の説明"
+                          rows="2"
+                          value={effect.description}
+                          onChange={(e) => updateEffect(idx, 'description', e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* その他メリット */}
+                  <div className="border-b pb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">その他メリット ({formData.benefits.length}個)</h3>
+                      <button
+                        onClick={addBenefit}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
+                    {formData.benefits.map((benefit, idx) => (
+                      <div key={idx} className="flex items-center gap-2 mb-2">
+                        <input
+                          type="text"
+                          className="flex-1 p-2 border rounded"
+                          placeholder="メリット"
+                          value={benefit}
+                          onChange={(e) => updateBenefit(idx, e.target.value)}
+                        />
+                        <button
+                          onClick={() => removeBenefit(idx)}
+                          className="text-red-500 hover:text-red-700 font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* スケジュール */}
+                  <div className="border-b pb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">導入スケジュール ({formData.timeline.length}個)</h3>
+                      <button
+                        onClick={addTimeline}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
+                    {formData.timeline.map((item, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <input
+                            type="text"
+                            className="flex-1 p-2 border rounded mr-2"
+                            placeholder="フェーズ名"
+                            value={item.phase}
+                            onChange={(e) => updateTimeline(idx, 'phase', e.target.value)}
+                          />
+                          <input
+                            type="text"
+                            className="w-32 p-2 border rounded"
+                            placeholder="期間"
+                            value={item.duration}
+                            onChange={(e) => updateTimeline(idx, 'duration', e.target.value)}
+                          />
+                          <button
+                            onClick={() => removeTimeline(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold ml-2"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <textarea
+                          className="w-full p-2 border rounded"
+                          placeholder="タスク内容"
+                          rows="2"
+                          value={item.tasks}
+                          onChange={(e) => updateTimeline(idx, 'tasks', e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 費用 */}
                   <div className="border-b pb-4">
                     <h3 className="font-bold text-lg mb-3">費用</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
                         <label className="block text-sm font-semibold mb-1">初期費用</label>
                         <input
                           type="text"
                           className="w-full p-2 border rounded"
+                          placeholder="3,000,000"
                           value={formData.initialCost}
                           onChange={(e) => setFormData({ ...formData, initialCost: e.target.value })}
                         />
@@ -382,11 +805,101 @@
                         <input
                           type="text"
                           className="w-full p-2 border rounded"
+                          placeholder="50,000"
                           value={formData.monthlyCost}
                           onChange={(e) => setFormData({ ...formData, monthlyCost: e.target.value })}
                         />
                       </div>
                     </div>
+                    
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold">追加費用 ({formData.additionalCosts.length}個)</h4>
+                      <button
+                        onClick={addAdditionalCost}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
+                    {formData.additionalCosts.map((cost, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
+                        <div className="flex gap-2 mb-2">
+                          <input
+                            type="text"
+                            className="flex-1 p-2 border rounded"
+                            placeholder="費用項目"
+                            value={cost.name}
+                            onChange={(e) => updateAdditionalCost(idx, 'name', e.target.value)}
+                          />
+                          <input
+                            type="text"
+                            className="w-40 p-2 border rounded"
+                            placeholder="金額"
+                            value={cost.amount}
+                            onChange={(e) => updateAdditionalCost(idx, 'amount', e.target.value)}
+                          />
+                          <button
+                            onClick={() => removeAdditionalCost(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          placeholder="説明"
+                          value={cost.description}
+                          onChange={(e) => updateAdditionalCost(idx, 'description', e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* まとめポイント */}
+                  <div className="pb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">まとめポイント ({formData.summaryPoints.length}個)</h3>
+                      <button
+                        onClick={addSummaryPoint}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ 追加
+                      </button>
+                    </div>
+                    {formData.summaryPoints.map((point, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <input
+                            type="text"
+                            className="w-16 p-1 border rounded text-center"
+                            placeholder="🎯"
+                            value={point.icon}
+                            onChange={(e) => updateSummaryPoint(idx, 'icon', e.target.value)}
+                          />
+                          <button
+                            onClick={() => removeSummaryPoint(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded mb-2"
+                          placeholder="ポイントタイトル"
+                          value={point.title}
+                          onChange={(e) => updateSummaryPoint(idx, 'title', e.target.value)}
+                        />
+                        <textarea
+                          className="w-full p-2 border rounded"
+                          placeholder="説明"
+                          rows="2"
+                          value={point.description}
+                          onChange={(e) => updateSummaryPoint(idx, 'description', e.target.value)}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
 
