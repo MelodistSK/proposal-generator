@@ -49,33 +49,93 @@ export default async function handler(req, res) {
 - 画像アップロード機能（各ページに配置）
 - 編集可能なキャプション機能
 
-PDF生成機能（重要）:
-const canvas = await html2canvas(container, {
-  scale: 2,
-  useCORS: true,
-  logging: false,
-  backgroundColor: '#ffffff',
-  width: 1200,
-  height: container.scrollHeight,
-  windowWidth: 1200,
-  windowHeight: container.scrollHeight
-});
-
-const imgData = canvas.toDataURL('image/jpeg', 0.95);
-const { jsPDF } = window.jspdf;
-
-// A4横向きで正しいアスペクト比
-const pdfWidth = 297;
-const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-const pdf = new jsPDF({
-  orientation: 'landscape',
-  unit: 'mm',
-  format: [pdfWidth, pdfHeight],
-  compress: true
-});
-
-pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+PDF生成機能（このコードを完全に使用）:
+async function generatePDF() {
+  const button = document.getElementById('pdfButton');
+  const overlay = document.getElementById('pdfLoadingOverlay');
+  const progressText = document.getElementById('pdfProgress');
+  
+  button.disabled = true;
+  overlay.classList.add('active');
+  
+  try {
+    const editElements = document.querySelectorAll('.add-image-button, .image-upload-area, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
+    editElements.forEach(el => el.style.display = 'none');
+    
+    const captionInputs = document.querySelectorAll('.image-caption input');
+    const captionTexts = document.querySelectorAll('.image-caption-text');
+    captionInputs.forEach(input => input.style.display = 'none');
+    captionTexts.forEach(text => {
+      if (text.textContent.trim()) {
+        text.style.display = 'block';
+      }
+    });
+    
+    progressText.textContent = '全ページを1枚の画像に変換中...';
+    
+    const container = document.getElementById('proposalContainer');
+    
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: 1200,
+      height: container.scrollHeight,
+      windowHeight: container.scrollHeight
+    });
+    
+    progressText.textContent = 'PDFを生成中...';
+    
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const { jsPDF } = window.jspdf;
+    
+    const imgWidth = 210;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    const pdf = new jsPDF({
+      orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+      unit: 'mm',
+      format: [imgWidth, imgHeight],
+      compress: true
+    });
+    
+    pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+    
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+    const filename = dateStr + '.pdf';
+    
+    pdf.save(filename);
+    
+    progressText.textContent = '完了！';
+  } catch (error) {
+    console.error('PDF生成エラー:', error);
+    alert('PDF生成中にエラーが発生しました。もう一度お試しください。');
+  } finally {
+    const editElements = document.querySelectorAll('.add-image-button, .image-upload-area, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
+    editElements.forEach(el => el.style.display = '');
+    
+    const captionInputs = document.querySelectorAll('.image-caption input');
+    const captionTexts = document.querySelectorAll('.image-caption-text');
+    captionInputs.forEach(input => {
+      if (!input.nextElementSibling || !input.nextElementSibling.textContent.trim()) {
+        input.style.display = '';
+      }
+    });
+    captionTexts.forEach(text => {
+      if (text.textContent.trim()) {
+        text.style.display = '';
+      }
+    });
+    
+    setTimeout(() => {
+      overlay.classList.remove('active');
+    }, 500);
+    
+    button.disabled = false;
+  }
+}
 
 CDN（必須）:
 - html2canvas: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
