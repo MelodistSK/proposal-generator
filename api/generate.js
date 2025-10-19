@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   try {
     const formData = req.body;
 
-const designSystemText = `
+    const designSystemText = `
 デザインシステム & 機能仕様
 
 カラーパレット:
@@ -180,7 +180,10 @@ ${designSystemText}
 
 提案書情報:
 
-会社情報:
+顧客情報:
+- 顧客名: ${formData.customerName}
+
+会社情報（提案元）:
 - 会社名: ${formData.companyName}
 - 担当者: ${formData.contactPerson}
 - メール: ${formData.email}
@@ -206,7 +209,11 @@ ${designSystemText}
 
 1. ページ1（表紙）:
    - グラデーション背景
-   - 会社ロゴ、提案タイトル、サブタイトル、日付
+   - **最上部に顧客名を右寄せで表示（「${formData.customerName} 御中」形式、font-size: 20px, margin-bottom: 60px、position: absolute, top: 40px, right: 60px）**
+   - 会社ロゴ（中央）
+   - 提案タイトル（中央）
+   - サブタイトル（中央）
+   - 日付（中央下部）
    - **ページの最後に画像コンテナ配置（data-page="cover"）**
    - ページフッターなし
 
@@ -303,7 +310,7 @@ ${designSystemText}
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 16000,
         messages: [
           {
