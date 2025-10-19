@@ -86,10 +86,47 @@ async function generatePDF() {
   button.disabled = true;
   overlay.classList.add('active');
   
+  // 削除した要素を保存するための配列
+  const removedElements = [];
+  
   try {
-    const editElements = document.querySelectorAll('.add-image-button, .image-upload-area, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
+    // 1. 編集用UI要素を非表示
+    const editElements = document.querySelectorAll('.add-image-button, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
     editElements.forEach(el => el.style.display = 'none');
     
+    // 2. 空の画像アップロードエリアを完全に削除（DOMから削除）
+    const emptyUploadAreas = document.querySelectorAll('.image-upload-area');
+    emptyUploadAreas.forEach(area => {
+      // 親要素とインデックスを保存
+      const parent = area.parentElement;
+      const nextSibling = area.nextSibling;
+      removedElements.push({
+        element: area,
+        parent: parent,
+        nextSibling: nextSibling
+      });
+      // DOMから削除
+      area.remove();
+    });
+    
+    // 3. 画像がない images-container 全体を一時削除
+    const imageContainers = document.querySelectorAll('.images-container');
+    imageContainers.forEach(container => {
+      // コンテナ内に .uploaded-image があるかチェック
+      const hasImages = container.querySelector('.uploaded-image');
+      if (!hasImages) {
+        const parent = container.parentElement;
+        const nextSibling = container.nextSibling;
+        removedElements.push({
+          element: container,
+          parent: parent,
+          nextSibling: nextSibling
+        });
+        container.remove();
+      }
+    });
+    
+    // 4. キャプション入力を非表示、テキストを表示
     const captionInputs = document.querySelectorAll('.image-caption input');
     const captionTexts = document.querySelectorAll('.image-caption-text');
     captionInputs.forEach(input => input.style.display = 'none');
@@ -103,6 +140,7 @@ async function generatePDF() {
     
     const container = document.getElementById('proposalContainer');
     
+    // 5. html2canvasでキャプチャ
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
@@ -141,9 +179,20 @@ async function generatePDF() {
     console.error('PDF生成エラー:', error);
     alert('PDF生成中にエラーが発生しました。もう一度お試しください。');
   } finally {
-    const editElements = document.querySelectorAll('.add-image-button, .image-upload-area, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
+    // 6. 削除した要素を元に戻す
+    removedElements.forEach(item => {
+      if (item.nextSibling) {
+        item.parent.insertBefore(item.element, item.nextSibling);
+      } else {
+        item.parent.appendChild(item.element);
+      }
+    });
+    
+    // 7. 編集用UI要素を再表示
+    const editElements = document.querySelectorAll('.add-image-button, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
     editElements.forEach(el => el.style.display = '');
     
+    // 8. キャプション入力を再表示
     const captionInputs = document.querySelectorAll('.image-caption input');
     const captionTexts = document.querySelectorAll('.image-caption-text');
     captionInputs.forEach(input => {
