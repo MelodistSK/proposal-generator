@@ -28,6 +28,7 @@
       });
 
       const [formData, setFormData] = useState({
+        customerName: '',
         companyName: '株式会社ままよろ',
         contactPerson: '平野',
         email: 't.hirano@mamayoro.com',
@@ -109,6 +110,7 @@
           setExtractedData(data);
           setFormData(prev => ({
             ...prev,
+            customerName: data.customerName || '',
             proposalTitle: data.proposalTitle || '',
             proposalSubtitle: data.proposalSubtitle || '',
             issues: data.issues || [],
@@ -469,9 +471,23 @@
                   {/* 基本情報 */}
                   <div className="border-b pb-4">
                     <h3 className="font-bold text-lg mb-3">基本情報</h3>
+                    
+                    {/* 顧客名を追加 */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold mb-1">顧客名（提案先）</label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border rounded"
+                        placeholder="例: 株式会社〇〇"
+                        value={formData.customerName}
+                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">※表紙に「〇〇御中」として表示されます</p>
+                    </div>
+                    
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold mb-1">会社名</label>
+                        <label className="block text-sm font-semibold mb-1">会社名（提案元）</label>
                         <input
                           type="text"
                           className="w-full p-2 border rounded"
@@ -791,7 +807,7 @@
                     <h3 className="font-bold text-lg mb-3">費用</h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-semibold mb-1">構築費用</label>
+                        <label className="block text-sm font-semibold mb-1">初期費用</label>
                         <input
                           type="text"
                           className="w-full p-2 border rounded"
@@ -801,11 +817,11 @@
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold mb-1">保守費用（構築完了から3ヵ月間）</label>
+                        <label className="block text-sm font-semibold mb-1">月額費用</label>
                         <input
                           type="text"
                           className="w-full p-2 border rounded"
-                          placeholder="0"
+                          placeholder="50,000"
                           value={formData.monthlyCost}
                           onChange={(e) => setFormData({ ...formData, monthlyCost: e.target.value })}
                         />
