@@ -791,7 +791,7 @@
                     <h3 className="font-bold text-lg mb-3">費用</h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-semibold mb-1">初期費用</label>
+                        <label className="block text-sm font-semibold mb-1">構築費用</label>
                         <input
                           type="text"
                           className="w-full p-2 border rounded"
@@ -801,11 +801,11 @@
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold mb-1">月額費用</label>
+                        <label className="block text-sm font-semibold mb-1">保守費用（構築完了から3ヵ月間）</label>
                         <input
                           type="text"
                           className="w-full p-2 border rounded"
-                          placeholder="50,000"
+                          placeholder="0"
                           value={formData.monthlyCost}
                           onChange={(e) => setFormData({ ...formData, monthlyCost: e.target.value })}
                         />
