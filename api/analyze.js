@@ -26,6 +26,7 @@ ${mockCode}
 以下のJSON形式で出力してください。JSONのみを出力し、他のテキストは含めないでください：
 
 {
+  "customerName": "提案先の顧客名・会社名",
   "proposalTitle": "提案のタイトル",
   "proposalSubtitle": "サブタイトル（技術やコンセプト）",
   "issues": [
