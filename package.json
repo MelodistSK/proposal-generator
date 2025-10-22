@@ -1,10 +1,13 @@
 {
   "name": "proposal-generator",
-  "version": "1.0.0",
-  "description": "提案書自動生成システム",
+  "version": "2.0.0",
+  "description": "ままよろ提案書自動生成システム",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
   },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "vercel": "latest"
+  }
 }
