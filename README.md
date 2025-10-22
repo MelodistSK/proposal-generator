@@ -1,120 +1,61 @@
-# 提案書自動生成システム - Vercel デプロイ手順
+# 提案書自動生成システム v2.0 - ままよろソリューション
 
-## 📁 フォルダ構成
+## 📋 概要
 
-```
-proposal-generator/
-├── package.json
-├── vercel.json
-├── README.md
-├── api/
-│   ├── analyze.js
-│   └── generate.js
-└── public/
-    └── index.html
-```
+議事録から自動で高品質な提案書を生成するシステムです。
+株式会社ままよろの過去事例とAIを活用し、最適なソリューションを提案します。
 
-## 🚀 デプロイ手順
+## 🚀 特徴
 
-### 1. プロジェクトフォルダを作成
+- **ままよろメソッド**: 情報の一元化・自動連携・既存資産活用
+- **事例ベース提案**: 55以上の成功事例から最適解を導出
+- **AI解析**: Claude APIによる高度な課題抽出と提案生成
+- **完全自動化**: 議事録入力から提案書HTMLまで自動生成
 
+## 📦 セットアップ
+
+### 1. Claude API キーの取得
+1. [console.anthropic.com](https://console.anthropic.com/) にアクセス
+2. API Keyを生成
+
+### 2. Vercelへのデプロイ
 ```bash
-mkdir proposal-generator
-cd proposal-generator
-```
-
-### 2. 各ファイルを配置
-
-- `package.json` をルートに配置
-- `vercel.json` をルートに配置
-- `api/` フォルダを作成し、`analyze.js` と `generate.js` を配置
-- `public/` フォルダを作成し、`index.html` を配置
-
-### 3. Vercel にデプロイ
-
-#### 方法A: Vercel CLI（推奨）
-
-```bash
-# Vercel CLIをインストール（初回のみ）
+# Vercel CLIインストール
 npm i -g vercel
 
 # デプロイ
 vercel
 
-# ログイン → プロジェクト名入力 → デプロイ完了
-```
-
-#### 方法B: GitHub 経由
-
-1. GitHubに新しいリポジトリを作成
-2. プロジェクトをプッシュ
-3. [vercel.com](https://vercel.com) にアクセス
-4. 「Import Project」→ GitHubリポジトリを選択
-5. 「Deploy」をクリック
-
-### 4. 環境変数の設定（重要！）
-
-デプロイ後、Vercelダッシュボードで環境変数を設定：
-
-1. プロジェクトを選択
-2. 「Settings」→「Environment Variables」
-3. 以下を追加：
-
-```
-ANTHROPIC_API_KEY = あなたのClaude APIキー
-```
-
-### 5. 再デプロイ
-
-環境変数を設定したら、再デプロイ：
-
-```bash
+# 環境変数設定後、本番デプロイ
 vercel --prod
 ```
 
-または、Vercelダッシュボードから「Redeploy」
+### 3. 環境変数の設定
+Vercelダッシュボードで以下を設定：
+- `ANTHROPIC_API_KEY`: Claude APIキー
 
-## ✅ 完成！
+## 🎯 使い方
 
-デプロイが完了すると、URLが発行されます：
+1. **議事録入力**: ヒアリング内容を入力
+2. **モック追加**: 必要に応じてJSファイルをアップロード
+3. **AI解析**: 課題と解決策を自動抽出
+4. **提案書生成**: HTMLファイルとしてダウンロード
 
-```
-https://your-project.vercel.app
-```
+## 📊 対応する課題パターン
 
-このURLにアクセスすれば、提案書自動生成システムが使えます！
+- 情報分散・検索困難
+- 議事録作成・共有
+- 営業事務負荷
+- タスク管理・フォロー漏れ
+- システム連携・統合
 
-## 🔑 Claude API キーの取得方法
+## 🔧 技術スタック
 
-1. [console.anthropic.com](https://console.anthropic.com/) にアクセス
-2. アカウント作成/ログイン
-3. 「API Keys」→「Create Key」
-4. 生成されたキーをコピー
-5. Vercelの環境変数に設定
+- **Frontend**: HTML/CSS/JavaScript
+- **Backend**: Vercel Functions (Node.js)
+- **AI**: Claude API (Anthropic)
+- **Hosting**: Vercel
 
-## 💡 トラブルシューティング
+## 📝 ライセンス
 
-### エラー: "ANTHROPIC_API_KEY is not defined"
-→ 環境変数が設定されていません。上記の手順4を実行してください。
-
-### エラー: "Failed to fetch"
-→ APIエンドポイントが正しく動作していません。Vercelのログを確認してください。
-
-### ローカルでテストしたい場合
-
-```bash
-# .env.local ファイルを作成
-echo "ANTHROPIC_API_KEY=your_api_key_here" > .env.local
-
-# ローカルサーバー起動
-vercel dev
-```
-
-## 📝 使い方
-
-1. 議事録を入力
-2. モックコード（JSファイル）をアップロード
-3. AI解析 → 内容確認 → 提案書生成
-4. HTMLダウンロード
-
-完成！
+株式会社ままよろ - All Rights Reserved
