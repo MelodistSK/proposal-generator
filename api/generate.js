@@ -1,392 +1,814 @@
+// api/generate.js - 編集可能な提案書HTML生成
+
 export default async function handler(req, res) {
-  // CORSヘッダー設定
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    const formData = req.body;
-
-    const designSystemText = `
-デザインシステム & 機能仕様
-
-カラーパレット:
-- プライマリグラデーション: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
-- セカンダリグラデーション: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)
-- アクセントカラー: #3b82f6, #10b981, #ef4444
-- テキストカラー: #1e40af (見出し), #374151 (本文), #6b7280 (補足)
-
-タイポグラフィ:
-- 表紙タイトル: 48px, bold
-- セクションタイトル: 32px, bold, #1e40af, border-bottom
-- サブタイトル: 20px, bold
-- 本文: 16px, line-height 1.8
-
-レイアウト:
-- コンテナ: max-width 1200px
-- ページ: 白背景, padding 40px 60px, min-height 675px
-- 9ページ固定構成
-
-グリッドレイアウトの最適化ルール:
-- 1-2個の項目: 1列グリッド（grid-template-columns: 1fr）
-- 3-4個の項目: 2列グリッド（grid-template-columns: repeat(2, 1fr)）
-- 5-6個の項目: 2列グリッド（grid-template-columns: repeat(2, 1fr)）
-- 7個以上の項目: 3列グリッド（grid-template-columns: repeat(3, 1fr)）
-- 効果カードは3個の場合のみ3列、それ以外は上記ルール適用
-
-コンポーネントパターン:
-1. 表紙 - グラデーション背景、白文字、中央配置
-2. 目次 - 円形番号バッジ、点線、ページ番号（7項目固定）
-3. 課題リスト - 左に赤い太線、グレー背景
-4. ソリューションカード - グリッド配置（数に応じて列数調整）、グラデーション
-5. システム構成図 - 薄いグレー背景、レイヤー構造
-6. 効果カード - グリッド配置（数に応じて列数調整）
-7. タイムライン - 左に縦線、円形バッジ
-8. 費用セクション - 2列グリッド固定（初期費用・月額費用）
-
-画像挿入の配置ルール（重要）:
-**各ページの最後、ページフッターの直前に画像コンテナを配置すること**
-
-画像コンテナの実装:
-<div class="images-container" data-page="ページID">
-  <button class="add-image-button" onclick="addUploadArea(this.parentElement)">
-    ➕ 画像を追加
-  </button>
-</div>
-
-各ページのdata-page属性:
-- ページ1（表紙）: data-page="cover"
-- ページ2（目次）: data-page="table-of-contents"
-- ページ3（課題）: data-page="current-issues"
-- ページ4（ソリューション）: data-page="solution-overview"
-- ページ5（システム構成）: data-page="system-architecture"
-- ページ6（導入効果）: data-page="expected-effects"
-- ページ7（スケジュール）: data-page="implementation-schedule"
-- ページ8（費用）: data-page="pricing"
-- ページ9（まとめ）: data-page="summary-contact"
-
-必須機能:
-- 画像アップロード機能（各ページの最後に配置）
-- 編集可能なキャプション機能
-
-PDF生成機能（このコードを完全に使用）:
-async function generatePDF() {
-  const button = document.getElementById('pdfButton');
-  const overlay = document.getElementById('pdfLoadingOverlay');
-  const progressText = document.getElementById('pdfProgress');
+  const { data } = req.body;
   
-  button.disabled = true;
-  overlay.classList.add('active');
-  
-  // 削除した要素を保存するための配列
-  const removedElements = [];
-  
-  try {
-    // 1. 編集用UI要素を非表示
-    const editElements = document.querySelectorAll('.add-image-button, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
-    editElements.forEach(el => el.style.display = 'none');
-    
-    // 2. 空の画像アップロードエリアを完全に削除（DOMから削除）
-    const emptyUploadAreas = document.querySelectorAll('.image-upload-area');
-    emptyUploadAreas.forEach(area => {
-      // 親要素とインデックスを保存
-      const parent = area.parentElement;
-      const nextSibling = area.nextSibling;
-      removedElements.push({
-        element: area,
-        parent: parent,
-        nextSibling: nextSibling
-      });
-      // DOMから削除
-      area.remove();
-    });
-    
-    // 3. 画像がない images-container 全体を一時削除
-    const imageContainers = document.querySelectorAll('.images-container');
-    imageContainers.forEach(container => {
-      // コンテナ内に .uploaded-image があるかチェック
-      const hasImages = container.querySelector('.uploaded-image');
-      if (!hasImages) {
-        const parent = container.parentElement;
-        const nextSibling = container.nextSibling;
-        removedElements.push({
-          element: container,
-          parent: parent,
-          nextSibling: nextSibling
-        });
-        container.remove();
-      }
-    });
-    
-    // 4. キャプション入力を非表示、テキストを表示
-    const captionInputs = document.querySelectorAll('.image-caption input');
-    const captionTexts = document.querySelectorAll('.image-caption-text');
-    captionInputs.forEach(input => input.style.display = 'none');
-    captionTexts.forEach(text => {
-      if (text.textContent.trim()) {
-        text.style.display = 'block';
-      }
-    });
-    
-    progressText.textContent = '全ページを1枚の画像に変換中...';
-    
-    const container = document.getElementById('proposalContainer');
-    
-    // 5. html2canvasでキャプチャ
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      windowWidth: 1200,
-      height: container.scrollHeight,
-      windowHeight: container.scrollHeight
-    });
-    
-    progressText.textContent = 'PDFを生成中...';
-    
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const { jsPDF } = window.jspdf;
-    
-    const imgWidth = 210;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    const pdf = new jsPDF({
-      orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
-      unit: 'mm',
-      format: [imgWidth, imgHeight],
-      compress: true
-    });
-    
-    pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
-    
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-    const filename = dateStr + '.pdf';
-    
-    pdf.save(filename);
-    
-    progressText.textContent = '完了！';
-  } catch (error) {
-    console.error('PDF生成エラー:', error);
-    alert('PDF生成中にエラーが発生しました。もう一度お試しください。');
-  } finally {
-    // 6. 削除した要素を元に戻す
-    removedElements.forEach(item => {
-      if (item.nextSibling) {
-        item.parent.insertBefore(item.element, item.nextSibling);
-      } else {
-        item.parent.appendChild(item.element);
-      }
-    });
-    
-    // 7. 編集用UI要素を再表示
-    const editElements = document.querySelectorAll('.add-image-button, .remove-upload-area, .remove-image, .cta-step-checkbox, .pdf-button');
-    editElements.forEach(el => el.style.display = '');
-    
-    // 8. キャプション入力を再表示
-    const captionInputs = document.querySelectorAll('.image-caption input');
-    const captionTexts = document.querySelectorAll('.image-caption-text');
-    captionInputs.forEach(input => {
-      if (!input.nextElementSibling || !input.nextElementSibling.textContent.trim()) {
-        input.style.display = '';
-      }
-    });
-    captionTexts.forEach(text => {
-      if (text.textContent.trim()) {
-        text.style.display = '';
-      }
-    });
-    
-    setTimeout(() => {
-      overlay.classList.remove('active');
-    }, 500);
-    
-    button.disabled = false;
+  if (!data) {
+    return res.status(400).json({ error: 'データがありません' });
   }
-}
 
-CDN（必須）:
-- html2canvas: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
-- jsPDF: https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
+  const today = new Date().toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
-印刷設定:
-- -webkit-print-color-adjust: exact
-- print-color-adjust: exact
-`;
-
-    const promptText = `以下のデザインシステムと情報をもとに、完全な提案書HTMLを生成してください。
-
-${designSystemText}
-
-提案書情報:
-
-顧客情報:
-- 顧客名: ${formData.customerName}
-
-会社情報（提案元）:
-- 会社名: ${formData.companyName}
-- 担当者: ${formData.contactPerson}
-- メール: ${formData.email}
-- 電話: ${formData.phone}
-
-提案内容:
-- タイトル: ${formData.proposalTitle}
-- サブタイトル: ${formData.proposalSubtitle}
-
-課題: ${JSON.stringify(formData.issues, null, 2)}
-ソリューション: ${JSON.stringify(formData.solutions, null, 2)}
-システム構成: ${formData.systemArchitecture}
-技術スタック: ${JSON.stringify(formData.techStack, null, 2)}
-導入効果: ${JSON.stringify(formData.effects, null, 2)}
-その他メリット: ${JSON.stringify(formData.benefits, null, 2)}
-スケジュール: ${JSON.stringify(formData.timeline, null, 2)}
-初期費用: ¥${formData.initialCost}
-月額費用: ¥${formData.monthlyCost}
-その他費用: ${JSON.stringify(formData.additionalCosts, null, 2)}
-まとめポイント: ${JSON.stringify(formData.summaryPoints, null, 2)}
-
-【重要】ページ構成と画像挿入位置:
-
-1. ページ1（表紙）:
-   - グラデーション背景
-   - **最上部に顧客名を右寄せで表示（「${formData.customerName} 御中」形式、font-size: 20px, margin-bottom: 60px、position: absolute, top: 40px, right: 60px）**
-   - 会社ロゴ（中央）
-   - 提案タイトル（中央）
-   - サブタイトル（中央）
-   - 日付（中央下部）
-   - **ページの最後に画像コンテナ配置（data-page="cover"）**
-   - ページフッターなし
-
-2. ページ2（目次）:
-   - セクションタイトル「目次」
-   - 7つの項目を円形番号バッジで表示（固定7項目）
-   - **ページの最後に画像コンテナ配置（data-page="table-of-contents"）**
-   - ページフッター（会社名、ページ番号2）
-
-3. ページ3（現状の課題）:
-   - セクションタイトル「現状の課題」
-   - 導入文
-   - **課題リスト（提供された課題の数だけ表示、赤い左ボーダー、グレー背景）**
-   - まとめ文（ハイライト付き）
-   - **ページの最後に画像コンテナ配置（data-page="current-issues"）**
-   - ページフッター（会社名、ページ番号3）
-
-4. ページ4（ソリューション概要）:
-   - セクションタイトル「ソリューション概要」
-   - サブタイトルと説明文
-   - **ソリューションカード（提供されたソリューションの数に応じてグリッド配置、グラデーション背景）**
-   - **グリッド列数は提供数に応じて最適化（1-2個→1列、3-6個→2列、7個以上→3列）**
-   - **ページの最後に画像コンテナ配置（data-page="solution-overview"）**
-   - ページフッター（会社名、ページ番号4）
-
-5. ページ5（システム構成図）:
-   - セクションタイトル「システム構成図」
-   - システム図（提供された構成に基づいて適切にレイヤー表示）
-   - サブタイトル「主な技術スタック」
-   - **技術スタックリスト（提供された技術の数に応じてグリッド配置）**
-   - **グリッド列数は提供数に応じて最適化（1-2個→1列、3個以上→2列）**
-   - **ページの最後に画像コンテナ配置（data-page="system-architecture"）**
-   - ページフッター（会社名、ページ番号5）
-
-6. ページ6（期待される導入効果）:
-   - セクションタイトル「期待される導入効果」
-   - **効果カード（提供された効果の数に応じてグリッド配置、青グラデーション）**
-   - **グリッド列数は提供数に応じて最適化（3個の場合のみ3列、それ以外は1-2個→1列、4-6個→2列、7個以上→3列）**
-   - 中央揃えの改善メッセージ
-   - サブタイトル「その他の効果」
-   - **チェックマーク付きメリットリスト（提供されたメリットの数だけ表示）**
-   - **ページの最後に画像コンテナ配置（data-page="expected-effects"）**
-   - ページフッター（会社名、ページ番号6）
-
-7. ページ7（導入スケジュール）:
-   - セクションタイトル「導入スケジュール」
-   - **タイムライン（提供されたスケジュールの数だけフェーズ表示、左に縦線と円形バッジ）**
-   - 黄色背景のスケジュール概要ボックス
-   - **ページの最後に画像コンテナ配置（data-page="implementation-schedule"）**
-   - ページフッター（会社名、ページ番号7）
-
-8. ページ8（導入費用）:
-   - セクションタイトル「導入費用」
-   - 2列グリッドの費用カード（初期費用、月額費用）※この2列は固定
-   - サブタイトル「別途必要な費用」
-   - **追加費用リスト（提供された追加費用の数だけ表示）**
-   - 黄色背景の注意事項ボックス
-   - **ページの最後に画像コンテナ配置（data-page="pricing"）**
-   - ページフッター（会社名、ページ番号8）
-
-9. ページ9（まとめ・お問い合わせ）:
-   - セクションタイトル「まとめ」
-   - まとめ文（ハイライト付き）
-   - **まとめポイント（提供されたポイントの数だけ表示、アイコン付き）**
-   - グラデーション背景の次のステップセクション（3ステップ、チェックボックス付き）※3ステップ固定
-   - 白背景のお問い合わせセクション（2列グリッド）
-   - **ページの最後に画像コンテナ配置（data-page="summary-contact"）**
-   - ページフッター（会社名、ページ番号9）
-
-【数の柔軟性に関する重要指示】:
-- 課題、ソリューション、効果、技術スタック、スケジュール、追加費用、まとめポイントは、提供されたデータの数だけ表示すること
-- グリッドレイアウトは、アイテム数に応じて自動的に最適な列数を選択すること
-- データが1個でも10個でも、適切にレイアウトされるようCSSを設計すること
-- ページの見た目のバランスを保つため、アイテムが少ない場合は余白を適切に取ること
-
-出力要件:
-1. 完全なHTML（DOCTYPE宣言からhtmlタグ閉じまで）
-2. デザインシステムで定義されたスタイルを完全に再現
-3. **各ページの最後、ページフッターの直前に必ず画像コンテナを配置**
-4. 画像アップロード機能とPDF生成機能を実装
-5. 9ページ構成を厳守
-6. 現在の日付を自動表示（JavaScript使用）
-7. すべてのCSSとJavaScriptをインライン実装
-8. 提供された情報を適切に各ページに配置
-9. **提供されたデータの数に応じて柔軟にレイアウトを調整**
-
-実行可能なHTMLコードのみを出力してください。説明文は不要です。`;
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 16000,
-        messages: [
-          {
-            role: 'user',
-            content: promptText
-          }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Claude API error: ${response.status}`);
+  // 編集可能な提案書HTML生成
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${data.companyInfo.name}様向け提案書</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-
-    const data = await response.json();
-    let htmlText = data.content[0].text;
     
-    // HTMLの抽出
-    htmlText = htmlText.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+    body {
+      font-family: 'Yu Gothic', 'Meiryo', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
     
-    return res.status(200).json({ html: htmlText });
+    .proposal-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .page {
+      background: white;
+      width: 100%;
+      min-height: 297mm;
+      padding: 60px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      position: relative;
+      page-break-after: always;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .page {
+        box-shadow: none;
+        border-radius: 0;
+        margin-bottom: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      [contenteditable] {
+        border: none !important;
+        background: none !important;
+      }
+    }
+    
+    /* 編集可能要素のスタイル */
+    [contenteditable="true"] {
+      outline: 2px dashed transparent;
+      padding: 2px 5px;
+      border-radius: 4px;
+      transition: all 0.3s;
+      cursor: text;
+    }
+    
+    [contenteditable="true"]:hover {
+      outline: 2px dashed #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+    
+    [contenteditable="true"]:focus {
+      outline: 2px solid #667eea;
+      background: rgba(102, 126, 234, 0.1);
+    }
+    
+    /* PDF生成ボタン */
+    .pdf-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #667eea;
+      color: white;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 50px;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      z-index: 1000;
+      transition: all 0.3s;
+    }
+    
+    .pdf-button:hover {
+      background: #764ba2;
+      transform: translateY(-2px);
+      box-shadow: 0 7px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* 表紙 */
+    .cover-page {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .cover-page::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      top: -250px;
+      right: -250px;
+    }
+    
+    .company-logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 80px;
+      letter-spacing: 2px;
+      z-index: 1;
+    }
+    
+    .proposal-title {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      z-index: 1;
+    }
+    
+    .proposal-subtitle {
+      font-size: 20px;
+      margin-bottom: 100px;
+      opacity: 0.9;
+      z-index: 1;
+    }
+    
+    .proposal-date {
+      position: absolute;
+      bottom: 60px;
+      font-size: 18px;
+      z-index: 1;
+    }
+    
+    /* 目次 */
+    .toc-title {
+      font-size: 32px;
+      color: #667eea;
+      margin-bottom: 40px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid #667eea;
+    }
+    
+    .toc-item {
+      font-size: 18px;
+      padding: 15px 0;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .toc-number {
+      color: #667eea;
+      font-weight: bold;
+    }
+    
+    /* 課題セクション */
+    .section-title {
+      font-size: 32px;
+      color: #667eea;
+      margin-bottom: 40px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid #667eea;
+    }
+    
+    .problems-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    
+    .problem-card {
+      background: linear-gradient(135deg, #ff6b6b15, #ff6b6b05);
+      border-left: 5px solid #ff6b6b;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .problem-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    
+    .problem-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ff6b6b;
+      margin-bottom: 15px;
+    }
+    
+    .problem-details {
+      list-style-position: inside;
+      color: #666;
+      line-height: 1.8;
+    }
+    
+    /* ソリューションセクション */
+    .solutions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+    }
+    
+    .solution-card {
+      background: linear-gradient(135deg, #667eea10, #764ba210);
+      border: 2px solid #667eea;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    
+    .solution-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+    }
+    
+    .solution-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+    
+    .solution-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    
+    .solution-description {
+      color: #666;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    
+    .solution-tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .tool-tag {
+      background: #667eea;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+    
+    /* システム構成図 */
+    .architecture-diagram {
+      background: #f8f9fa;
+      padding: 40px;
+      border-radius: 10px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .architecture-title {
+      font-size: 24px;
+      color: #667eea;
+      margin-bottom: 30px;
+    }
+    
+    /* 画像アップロードエリア */
+    .image-upload-area {
+      border: 3px dashed #667eea;
+      padding: 40px;
+      text-align: center;
+      margin: 30px 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: rgba(102, 126, 234, 0.05);
+    }
+    
+    .image-upload-area:hover {
+      background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .uploaded-image {
+      max-width: 100%;
+      margin: 20px auto;
+      display: block;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 導入効果 */
+    .effects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+    
+    .effect-card {
+      background: linear-gradient(135deg, #48c77415, #48c77405);
+      padding: 25px;
+      border-radius: 10px;
+      text-align: center;
+      border: 2px solid #48c774;
+    }
+    
+    .effect-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #48c774;
+      margin-bottom: 10px;
+    }
+    
+    .effect-label {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    /* スケジュール */
+    .schedule-timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+    
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    
+    .timeline-marker {
+      width: 40px;
+      height: 40px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 30px;
+    }
+    
+    .timeline-content {
+      flex: 1;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    
+    .timeline-title {
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+    
+    /* 費用 */
+    .cost-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+    
+    .cost-card {
+      background: linear-gradient(135deg, #667eea10, #764ba210);
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      border: 2px solid #667eea;
+    }
+    
+    .cost-label {
+      font-size: 18px;
+      color: #667eea;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    
+    .cost-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .cost-note {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    /* お問い合わせ */
+    .contact-section {
+      background: linear-gradient(135deg, #667eea10, #764ba210);
+      padding: 40px;
+      border-radius: 15px;
+      margin-top: 40px;
+    }
+    
+    .contact-title {
+      font-size: 24px;
+      color: #667eea;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    .contact-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    .contact-item {
+      text-align: center;
+    }
+    
+    .contact-label {
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+    
+    .page-footer {
+      position: absolute;
+      bottom: 30px;
+      left: 60px;
+      right: 60px;
+      display: flex;
+      justify-content: space-between;
+      color: #999;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <button class="pdf-button no-print" onclick="generatePDF()">📥 PDF保存</button>
+  
+  <div class="proposal-container" id="proposal">
+    
+    <!-- ページ1: 表紙 -->
+    <div class="page cover-page">
+      <div class="company-logo" contenteditable="true">株式会社ままよろ</div>
+      <div class="proposal-title" contenteditable="true">${data.proposal.title}</div>
+      <div class="proposal-subtitle" contenteditable="true">${data.proposal.subtitle}</div>
+      <div class="proposal-company" style="font-size: 36px; margin-bottom: 40px;" contenteditable="true">${data.companyInfo.name}様</div>
+      <div class="proposal-date">${today}</div>
+    </div>
+    
+    <!-- ページ2: 目次 -->
+    <div class="page">
+      <h2 class="toc-title">目次</h2>
+      <div class="toc-item">
+        <span>現状の課題</span>
+        <span class="toc-number">03</span>
+      </div>
+      <div class="toc-item">
+        <span>ソリューション概要</span>
+        <span class="toc-number">04</span>
+      </div>
+      <div class="toc-item">
+        <span>システム構成図</span>
+        <span class="toc-number">05</span>
+      </div>
+      <div class="toc-item">
+        <span>期待される導入効果</span>
+        <span class="toc-number">06</span>
+      </div>
+      <div class="toc-item">
+        <span>導入スケジュール</span>
+        <span class="toc-number">07</span>
+      </div>
+      <div class="toc-item">
+        <span>導入費用</span>
+        <span class="toc-number">08</span>
+      </div>
+      <div class="toc-item">
+        <span>お問い合わせ</span>
+        <span class="toc-number">09</span>
+      </div>
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>2</span>
+      </div>
+    </div>
+    
+    <!-- ページ3: 現状の課題 -->
+    <div class="page">
+      <h2 class="section-title">現状の課題</h2>
+      <div class="problems-grid">
+        ${data.problems.map(problem => `
+          <div class="problem-card">
+            <div class="problem-icon">${problem.icon}</div>
+            <div class="problem-title" contenteditable="true">${problem.title}</div>
+            <ul class="problem-details">
+              ${problem.details.map(detail => `
+                <li contenteditable="true">${detail}</li>
+              `).join('')}
+            </ul>
+          </div>
+        `).join('')}
+      </div>
+      <div class="image-upload-area no-print" onclick="this.querySelector('input').click()">
+        <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
+        <div>画像を追加（クリックまたはドラッグ&ドロップ）</div>
+        <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event, this.parentElement)">
+      </div>
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>3</span>
+      </div>
+    </div>
+    
+    <!-- ページ4: ソリューション概要 -->
+    <div class="page">
+      <h2 class="section-title">ソリューション概要</h2>
+      <div class="solutions-grid">
+        ${data.solutions.map(solution => `
+          <div class="solution-card">
+            <div class="solution-icon">${solution.icon}</div>
+            <div class="solution-name" contenteditable="true">${solution.name}</div>
+            <div class="solution-description" contenteditable="true">${solution.description}</div>
+            <div class="solution-tools">
+              ${solution.tools.map(tool => `
+                <span class="tool-tag">${tool}</span>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>4</span>
+      </div>
+    </div>
+    
+    <!-- ページ5: システム構成図 -->
+    <div class="page">
+      <h2 class="section-title">システム構成図</h2>
+      <div class="architecture-diagram">
+        <div class="architecture-title">kintoneを中心とした統合システム</div>
+        <div contenteditable="true" style="margin: 20px 0;">
+          <p><strong>コアシステム:</strong> ${data.systemArchitecture.core}</p>
+          <p><strong>構築アプリ:</strong> ${data.systemArchitecture.apps.join('、')}</p>
+          <p><strong>外部連携:</strong> ${data.systemArchitecture.integrations.join('、')}</p>
+          <p><strong>AI機能:</strong> ${data.systemArchitecture.aiComponents.join('、')}</p>
+        </div>
+      </div>
+      <div class="image-upload-area no-print" onclick="this.querySelector('input').click()">
+        <div style="font-size: 48px; margin-bottom: 10px;">📊</div>
+        <div>システム構成図を追加</div>
+        <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event, this.parentElement)">
+      </div>
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>5</span>
+      </div>
+    </div>
+    
+    <!-- ページ6: 期待される導入効果 -->
+    <div class="page">
+      <h2 class="section-title">期待される導入効果</h2>
+      <div class="effects-grid">
+        ${data.effects.quantitative.map(effect => `
+          <div class="effect-card">
+            <div class="effect-value" contenteditable="true">${effect.improvement}</div>
+            <div class="effect-label" contenteditable="true">${effect.label}</div>
+            <div style="color: #999; font-size: 12px; margin-top: 10px;">
+              ${effect.before} → ${effect.after}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <h3 style="color: #667eea; margin: 40px 0 20px;">定性効果</h3>
+      <ul style="line-height: 2; font-size: 18px; color: #333;">
+        ${data.effects.qualitative.map(effect => `
+          <li contenteditable="true">✅ ${effect}</li>
+        `).join('')}
+      </ul>
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>6</span>
+      </div>
+    </div>
+    
+    <!-- ページ7: 導入スケジュール -->
+    <div class="page">
+      <h2 class="section-title">導入スケジュール</h2>
+      <p style="margin-bottom: 30px; color: #666;">
+        全体期間: <span contenteditable="true" style="font-weight: bold; color: #667eea;">${data.schedule.totalWeeks}週間</span>
+      </p>
+      <div class="schedule-timeline">
+        ${data.schedule.phases.map((phase, index) => `
+          <div class="timeline-item">
+            <div class="timeline-marker">${index + 1}</div>
+            <div class="timeline-content">
+              <div class="timeline-title" contenteditable="true">${phase.name}（${phase.weeks}週間）</div>
+              <div contenteditable="true" style="color: #666;">${phase.description}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>7</span>
+      </div>
+    </div>
+    
+    <!-- ページ8: 導入費用 -->
+    <div class="page">
+      <h2 class="section-title">導入費用</h2>
+      <div class="cost-cards">
+        <div class="cost-card">
+          <div class="cost-label">初期費用</div>
+          <div class="cost-value" contenteditable="true">¥${data.cost.initial.toLocaleString()}</div>
+          <div class="cost-note" contenteditable="true">${data.cost.initialDetails}</div>
+          <div class="cost-note" style="margin-top: 10px; color: #48c774; font-weight: bold;">
+            ${data.cost.subsidy}
+          </div>
+        </div>
+        <div class="cost-card">
+          <div class="cost-label">月額費用</div>
+          <div class="cost-value" contenteditable="true">¥${data.cost.monthly.toLocaleString()}〜</div>
+          <div class="cost-note" contenteditable="true">${data.cost.monthlyDetails}</div>
+          <div class="cost-note" style="margin-top: 10px;">
+            ※構築後3ヶ月間無料
+          </div>
+        </div>
+      </div>
+      <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-top: 30px;">
+        <h3 style="color: #667eea; margin-bottom: 15px;">ROI（投資対効果）</h3>
+        <p contenteditable="true" style="font-size: 18px; color: #333;">${data.cost.roi}</p>
+      </div>
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>8</span>
+      </div>
+    </div>
+    
+    <!-- ページ9: お問い合わせ -->
+    <div class="page">
+      <h2 class="section-title">次のステップ</h2>
+      <div style="margin-bottom: 40px;">
+        ${data.nextActions.map((action, index) => `
+          <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <div style="width: 40px; height: 40px; background: #667eea; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: bold;">
+              ${index + 1}
+            </div>
+            <div contenteditable="true" style="font-size: 18px;">${action}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="contact-section">
+        <div class="contact-title">お問い合わせ・ご相談窓口</div>
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-label">会社名</div>
+            <div contenteditable="true">株式会社ままよろ</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-label">担当</div>
+            <div contenteditable="true">営業部</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-label">メール</div>
+            <div contenteditable="true">contact@mamayoro.com</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-label">電話</div>
+            <div contenteditable="true">000-0000-0000</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 40px; color: #666;">
+        ご不明な点がございましたら、お気軽にお問い合わせください
+      </div>
+      
+      <div class="page-footer">
+        <span contenteditable="true">株式会社ままよろ</span>
+        <span>9</span>
+      </div>
+    </div>
+    
+  </div>
+  
+  <script>
+    // 画像アップロード処理
+    function handleImageUpload(event, container) {
+      const file = event.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'uploaded-image';
+          container.style.display = 'none';
+          container.parentElement.insertBefore(img, container.nextSibling);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    // PDF生成処理
+    async function generatePDF() {
+      const button = document.querySelector('.pdf-button');
+      button.textContent = '⏳ PDF生成中...';
+      button.disabled = true;
+      
+      // 編集枠を一時的に非表示
+      const editables = document.querySelectorAll('[contenteditable]');
+      editables.forEach(el => {
+        el.style.outline = 'none';
+        el.style.background = 'none';
+      });
+      
+      // no-print要素を非表示
+      const noPrintElements = document.querySelectorAll('.no-print');
+      noPrintElements.forEach(el => el.style.display = 'none');
+      
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        const pages = document.querySelectorAll('.page');
+        
+        for (let i = 0; i < pages.length; i++) {
+          const canvas = await html2canvas(pages[i], {
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+          });
+          
+          const imgData = canvas.toDataURL('image/png');
+          
+          if (i > 0) pdf.addPage();
+          
+          // A4サイズに合わせて画像を配置
+          pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+        }
+        
+        // ファイル名を生成
+        const today = new Date();
+        const filename = \`proposal_\${today.getFullYear()}\${String(today.getMonth()+1).padStart(2,'0')}\${String(today.getDate()).padStart(2,'0')}.pdf\`;
+        
+        pdf.save(filename);
+        
+      } finally {
+        // UI要素を復元
+        button.textContent = '📥 PDF保存';
+        button.disabled = false;
+        noPrintElements.forEach(el => el.style.display = '');
+      }
+    }
+  </script>
+</body>
+</html>`;
 
-  } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
-  }
+  res.status(200).json({ html });
 }
