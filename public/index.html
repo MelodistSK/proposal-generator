@@ -3,998 +3,354 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>提案書自動生成システム</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <title>提案書自動生成システム - 株式会社ままよろ</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .loading-spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .step-indicator {
+      transition: all 0.3s ease;
+    }
+    .step-active {
+      background: #667eea;
+      color: white;
+    }
+    .step-completed {
+      background: #48c774;
+      color: white;
+    }
+  </style>
 </head>
-<body>
-  <div id="root"></div>
-  
-  <script type="text/babel">
-    const { useState } = React;
+<body class="bg-gray-50">
+  <div class="min-h-screen">
+    <!-- ヘッダー -->
+    <div class="gradient-bg text-white py-6 px-8 shadow-lg">
+      <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold">🚀 提案書自動生成システム</h1>
+        <p class="mt-2 text-purple-100">議事録から提案書を完全自動生成 - Powered by ままよろメソッド</p>
+      </div>
+    </div>
 
-    const ProposalGenerator = () => {
-      const [step, setStep] = useState(1);
-      const [loading, setLoading] = useState(false);
-      const [extractedData, setExtractedData] = useState(null);
-      const [generatedHTML, setGeneratedHTML] = useState('');
-      
-      const [inputData, setInputData] = useState({
-        transcript: '',
-        mockFiles: [],
-        mockCodeText: ''
-      });
-
-      const [formData, setFormData] = useState({
-        customerName: '',
-        companyName: '株式会社ままよろ',
-        contactPerson: '平野',
-        email: 't.hirano@mamayoro.com',
-        phone: '050-3662-5788',
-        proposalTitle: '',
-        proposalSubtitle: '',
-        issues: [],
-        solutions: [],
-        systemArchitecture: '',
-        techStack: [],
-        effects: [],
-        benefits: [],
-        timeline: [],
-        initialCost: '',
-        monthlyCost: '',
-        additionalCosts: [],
-        summaryPoints: []
-      });
-
-      const handleFileUpload = (e) => {
-        const files = Array.from(e.target.files);
-        
-        files.forEach(file => {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const fileData = {
-              name: file.name,
-              content: event.target.result,
-              id: Date.now() + Math.random()
-            };
-            
-            setInputData(prev => ({
-              ...prev,
-              mockFiles: [...prev.mockFiles, fileData]
-            }));
-          };
-          reader.readAsText(file);
-        });
-        
-        e.target.value = '';
-      };
-
-      const removeFile = (fileId) => {
-        setInputData(prev => ({
-          ...prev,
-          mockFiles: prev.mockFiles.filter(f => f.id !== fileId)
-        }));
-      };
-
-      const analyzeInput = async () => {
-        setLoading(true);
-        try {
-          const mockCodeContent = inputData.mockFiles.map(file => 
-            '# ' + file.name + '\n```javascript\n' + file.content + '\n```\n'
-          ).join('\n\n');
-          
-          const additionalMockText = inputData.mockCodeText ? 
-            '\n\n# 追加説明・コード\n' + inputData.mockCodeText : '';
-          
-          const fullMockContent = mockCodeContent + additionalMockText;
-          
-          const response = await fetch("/api/analyze", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              transcript: inputData.transcript,
-              mockCode: fullMockContent
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error('API request failed: ' + response.status);
-          }
-
-          const data = await response.json();
-          
-          setExtractedData(data);
-          setFormData(prev => ({
-            ...prev,
-            customerName: data.customerName || '',
-            proposalTitle: data.proposalTitle || '',
-            proposalSubtitle: data.proposalSubtitle || '',
-            issues: data.issues || [],
-            solutions: data.solutions || [],
-            systemArchitecture: data.systemArchitecture || '',
-            techStack: data.techStack || [],
-            effects: data.effects || [],
-            benefits: data.benefits || [],
-            timeline: data.timeline || [],
-            initialCost: data.initialCost || '',
-            monthlyCost: data.monthlyCost || '',
-            additionalCosts: data.additionalCosts || [],
-            summaryPoints: data.summaryPoints || []
-          }));
-          
-          setStep(2);
-        } catch (error) {
-          console.error('AI解析エラー:', error);
-          alert('AI解析中にエラーが発生しました。\n\nエラー詳細: ' + error.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      const generateHTML = async () => {
-        setLoading(true);
-        try {
-          const response = await fetch("/api/generate", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData)
-          });
-
-          if (!response.ok) {
-            throw new Error('API request failed: ' + response.status);
-          }
-
-          const data = await response.json();
-          
-          setGeneratedHTML(data.html);
-          setStep(3);
-        } catch (error) {
-          console.error('HTML生成エラー:', error);
-          alert('HTML生成中にエラーが発生しました。\n\nエラー詳細: ' + error.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      const downloadHTML = () => {
-        const blob = new Blob([generatedHTML], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
-        a.href = url;
-        a.download = 'proposal_' + today + '.html';
-        a.click();
-        URL.revokeObjectURL(url);
-      };
-
-      // 配列項目の追加・削除・更新用の関数
-      const addIssue = () => {
-        setFormData({
-          ...formData,
-          issues: [...formData.issues, { icon: '🔍', title: '', description: '' }]
-        });
-      };
-
-      const removeIssue = (index) => {
-        setFormData({
-          ...formData,
-          issues: formData.issues.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateIssue = (index, field, value) => {
-        const newIssues = [...formData.issues];
-        newIssues[index][field] = value;
-        setFormData({ ...formData, issues: newIssues });
-      };
-
-      const addSolution = () => {
-        setFormData({
-          ...formData,
-          solutions: [...formData.solutions, { icon: '📊', title: '', description: '' }]
-        });
-      };
-
-      const removeSolution = (index) => {
-        setFormData({
-          ...formData,
-          solutions: formData.solutions.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateSolution = (index, field, value) => {
-        const newSolutions = [...formData.solutions];
-        newSolutions[index][field] = value;
-        setFormData({ ...formData, solutions: newSolutions });
-      };
-
-      const addTechStack = () => {
-        setFormData({
-          ...formData,
-          techStack: [...formData.techStack, { name: '', description: '' }]
-        });
-      };
-
-      const removeTechStack = (index) => {
-        setFormData({
-          ...formData,
-          techStack: formData.techStack.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateTechStack = (index, field, value) => {
-        const newTechStack = [...formData.techStack];
-        newTechStack[index][field] = value;
-        setFormData({ ...formData, techStack: newTechStack });
-      };
-
-      const addEffect = () => {
-        setFormData({
-          ...formData,
-          effects: [...formData.effects, { label: '', description: '' }]
-        });
-      };
-
-      const removeEffect = (index) => {
-        setFormData({
-          ...formData,
-          effects: formData.effects.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateEffect = (index, field, value) => {
-        const newEffects = [...formData.effects];
-        newEffects[index][field] = value;
-        setFormData({ ...formData, effects: newEffects });
-      };
-
-      const addBenefit = () => {
-        setFormData({
-          ...formData,
-          benefits: [...formData.benefits, '']
-        });
-      };
-
-      const removeBenefit = (index) => {
-        setFormData({
-          ...formData,
-          benefits: formData.benefits.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateBenefit = (index, value) => {
-        const newBenefits = [...formData.benefits];
-        newBenefits[index] = value;
-        setFormData({ ...formData, benefits: newBenefits });
-      };
-
-      const addTimeline = () => {
-        setFormData({
-          ...formData,
-          timeline: [...formData.timeline, { phase: '', duration: '', tasks: '' }]
-        });
-      };
-
-      const removeTimeline = (index) => {
-        setFormData({
-          ...formData,
-          timeline: formData.timeline.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateTimeline = (index, field, value) => {
-        const newTimeline = [...formData.timeline];
-        newTimeline[index][field] = value;
-        setFormData({ ...formData, timeline: newTimeline });
-      };
-
-      const addAdditionalCost = () => {
-        setFormData({
-          ...formData,
-          additionalCosts: [...formData.additionalCosts, { name: '', amount: '', description: '' }]
-        });
-      };
-
-      const removeAdditionalCost = (index) => {
-        setFormData({
-          ...formData,
-          additionalCosts: formData.additionalCosts.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateAdditionalCost = (index, field, value) => {
-        const newCosts = [...formData.additionalCosts];
-        newCosts[index][field] = value;
-        setFormData({ ...formData, additionalCosts: newCosts });
-      };
-
-      const addSummaryPoint = () => {
-        setFormData({
-          ...formData,
-          summaryPoints: [...formData.summaryPoints, { icon: '🎯', title: '', description: '' }]
-        });
-      };
-
-      const removeSummaryPoint = (index) => {
-        setFormData({
-          ...formData,
-          summaryPoints: formData.summaryPoints.filter((_, i) => i !== index)
-        });
-      };
-
-      const updateSummaryPoint = (index, field, value) => {
-        const newPoints = [...formData.summaryPoints];
-        newPoints[index][field] = value;
-        setFormData({ ...formData, summaryPoints: newPoints });
-      };
-
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="bg-white rounded-lg shadow-2xl p-8 mb-8">
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">提案書自動生成システム</h1>
-              <p className="text-gray-600">議事録とモックから、プロフェッショナルな提案書を自動生成</p>
-              
-              <div className="flex items-center justify-center mt-8 space-x-4">
-                <div className={'flex items-center ' + (step >= 1 ? 'text-indigo-600' : 'text-gray-400')}>
-                  <div className={'w-10 h-10 rounded-full flex items-center justify-center ' + (step >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-300')}>
-                    1
-                  </div>
-                  <span className="ml-2 font-semibold">入力</span>
-                </div>
-                <div className="w-16 h-1 bg-gray-300"></div>
-                <div className={'flex items-center ' + (step >= 2 ? 'text-indigo-600' : 'text-gray-400')}>
-                  <div className={'w-10 h-10 rounded-full flex items-center justify-center ' + (step >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-300')}>
-                    2
-                  </div>
-                  <span className="ml-2 font-semibold">確認</span>
-                </div>
-                <div className="w-16 h-1 bg-gray-300"></div>
-                <div className={'flex items-center ' + (step >= 3 ? 'text-indigo-600' : 'text-gray-400')}>
-                  <div className={'w-10 h-10 rounded-full flex items-center justify-center ' + (step >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-300')}>
-                    3
-                  </div>
-                  <span className="ml-2 font-semibold">完成</span>
-                </div>
-              </div>
-            </div>
-
-            {step === 1 && (
-              <div className="bg-white rounded-lg shadow-2xl p-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  📤 STEP 1: 情報を入力
-                </h2>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      📝 議事録・文字起こし
-                    </label>
-                    <textarea
-                      className="w-full h-64 p-4 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
-                      placeholder="ヒアリングの議事録や文字起こしを貼り付けてください..."
-                      value={inputData.transcript}
-                      onChange={(e) => setInputData({ ...inputData, transcript: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      💻 モックコード（複数ファイル対応）
-                    </label>
-                    
-                    <div className="mb-4">
-                      <label className="inline-flex items-center px-4 py-3 bg-indigo-100 text-indigo-700 rounded-lg cursor-pointer hover:bg-indigo-200 transition">
-                        <span className="mr-2">📤</span>
-                        <span className="font-semibold">📁 JSファイルを追加</span>
-                        <input
-                          type="file"
-                          accept=".js,.jsx,.ts,.tsx,.json,.txt"
-                          multiple
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      <p className="text-xs text-gray-500 mt-2">
-                        kintoneカスタマイズJS、React、その他のコードファイルを複数選択可能
-                      </p>
-                    </div>
-
-                    {inputData.mockFiles.length > 0 && (
-                      <div className="mb-4 space-y-2">
-                        {inputData.mockFiles.map(file => (
-                          <div key={file.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
-                            <div className="flex items-center space-x-3">
-                              <span className="text-indigo-600">📄</span>
-                              <div>
-                                <div className="font-semibold text-sm">{file.name}</div>
-                                <div className="text-xs text-gray-500">
-                                  {(file.content.length / 1024).toFixed(1)} KB
-                                </div>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => removeFile(file.id)}
-                              className="text-red-500 hover:text-red-700 font-bold"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <textarea
-                      className="w-full h-48 p-4 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none font-mono text-sm"
-                      placeholder="または、コードや解説を直接入力することもできます..."
-                      value={inputData.mockCodeText}
-                      onChange={(e) => setInputData({ ...inputData, mockCodeText: e.target.value })}
-                    />
-                  </div>
-
-                  <button
-                    onClick={analyzeInput}
-                    disabled={loading || !inputData.transcript || (inputData.mockFiles.length === 0 && !inputData.mockCodeText)}
-                    className="w-full bg-indigo-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="animate-spin mr-2">⏳</span>
-                        AI解析中...
-                      </>
-                    ) : (
-                      <>
-                        <span className="mr-2">🪄</span>
-                        🤖 AI解析開始
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="bg-white rounded-lg shadow-2xl p-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <span className="mr-2 text-green-500">✓</span>
-                  STEP 2: 抽出内容を確認・編集
-                </h2>
-
-                <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4">
-                  
-                  {/* 基本情報 */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-bold text-lg mb-3">基本情報</h3>
-                    
-                    {/* 顧客名を追加 */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-semibold mb-1">顧客名（提案先）</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        placeholder="例: 株式会社〇〇"
-                        value={formData.customerName}
-                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">※表紙に「〇〇御中」として表示されます</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">会社名（提案元）</label>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded"
-                          value={formData.companyName}
-                          onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">担当者</label>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded"
-                          value={formData.contactPerson}
-                          onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">メール</label>
-                        <input
-                          type="email"
-                          className="w-full p-2 border rounded"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">電話番号</label>
-                        <input
-                          type="tel"
-                          className="w-full p-2 border rounded"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 提案タイトル */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-bold text-lg mb-3">提案タイトル</h3>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded mb-2"
-                      placeholder="メインタイトル"
-                      value={formData.proposalTitle}
-                      onChange={(e) => setFormData({ ...formData, proposalTitle: e.target.value })}
-                    />
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded"
-                      placeholder="サブタイトル"
-                      value={formData.proposalSubtitle}
-                      onChange={(e) => setFormData({ ...formData, proposalSubtitle: e.target.value })}
-                    />
-                  </div>
-
-                  {/* 課題 */}
-                  <div className="border-b pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">課題 ({formData.issues.length}個)</h3>
-                      <button
-                        onClick={addIssue}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.issues.map((issue, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <input
-                            type="text"
-                            className="w-16 p-1 border rounded text-center"
-                            placeholder="🔍"
-                            value={issue.icon}
-                            onChange={(e) => updateIssue(idx, 'icon', e.target.value)}
-                          />
-                          <button
-                            onClick={() => removeIssue(idx)}
-                            className="text-red-500 hover:text-red-700 font-bold"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded mb-2"
-                          placeholder="課題タイトル"
-                          value={issue.title}
-                          onChange={(e) => updateIssue(idx, 'title', e.target.value)}
-                        />
-                        <textarea
-                          className="w-full p-2 border rounded"
-                          placeholder="詳細説明"
-                          rows="3"
-                          value={issue.description}
-                          onChange={(e) => updateIssue(idx, 'description', e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* ソリューション */}
-                  <div className="border-b pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">ソリューション ({formData.solutions.length}個)</h3>
-                      <button
-                        onClick={addSolution}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.solutions.map((solution, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <input
-                            type="text"
-                            className="w-16 p-1 border rounded text-center"
-                            placeholder="📊"
-                            value={solution.icon}
-                            onChange={(e) => updateSolution(idx, 'icon', e.target.value)}
-                          />
-                          <button
-                            onClick={() => removeSolution(idx)}
-                            className="text-red-500 hover:text-red-700 font-bold"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded mb-2"
-                          placeholder="ソリューション名"
-                          value={solution.title}
-                          onChange={(e) => updateSolution(idx, 'title', e.target.value)}
-                        />
-                        <textarea
-                          className="w-full p-2 border rounded"
-                          placeholder="説明"
-                          rows="2"
-                          value={solution.description}
-                          onChange={(e) => updateSolution(idx, 'description', e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* システム構成 */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-bold text-lg mb-3">システム構成</h3>
-                    <textarea
-                      className="w-full p-2 border rounded"
-                      placeholder="システム構成の説明"
-                      rows="4"
-                      value={formData.systemArchitecture}
-                      onChange={(e) => setFormData({ ...formData, systemArchitecture: e.target.value })}
-                    />
-                  </div>
-
-                  {/* 技術スタック */}
-                  <div className="border-b pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">技術スタック ({formData.techStack.length}個)</h3>
-                      <button
-                        onClick={addTechStack}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.techStack.map((tech, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <input
-                            type="text"
-                            className="flex-1 p-2 border rounded"
-                            placeholder="技術名"
-                            value={tech.name}
-                            onChange={(e) => updateTechStack(idx, 'name', e.target.value)}
-                          />
-                          <button
-                            onClick={() => removeTechStack(idx)}
-                            className="text-red-500 hover:text-red-700 font-bold ml-2"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded"
-                          placeholder="説明"
-                          value={tech.description}
-                          onChange={(e) => updateTechStack(idx, 'description', e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* 導入効果 */}
-                  <div className="border-b pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">導入効果 ({formData.effects.length}個)</h3>
-                      <button
-                        onClick={addEffect}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.effects.map((effect, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <input
-                            type="text"
-                            className="flex-1 p-2 border rounded"
-                            placeholder="効果ラベル"
-                            value={effect.label}
-                            onChange={(e) => updateEffect(idx, 'label', e.target.value)}
-                          />
-                          <button
-                            onClick={() => removeEffect(idx)}
-                            className="text-red-500 hover:text-red-700 font-bold ml-2"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <textarea
-                          className="w-full p-2 border rounded"
-                          placeholder="効果の説明"
-                          rows="2"
-                          value={effect.description}
-                          onChange={(e) => updateEffect(idx, 'description', e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* その他メリット */}
-                  <div className="border-b pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">その他メリット ({formData.benefits.length}個)</h3>
-                      <button
-                        onClick={addBenefit}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.benefits.map((benefit, idx) => (
-                      <div key={idx} className="flex items-center gap-2 mb-2">
-                        <input
-                          type="text"
-                          className="flex-1 p-2 border rounded"
-                          placeholder="メリット"
-                          value={benefit}
-                          onChange={(e) => updateBenefit(idx, e.target.value)}
-                        />
-                        <button
-                          onClick={() => removeBenefit(idx)}
-                          className="text-red-500 hover:text-red-700 font-bold"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* スケジュール */}
-                  <div className="border-b pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">導入スケジュール ({formData.timeline.length}個)</h3>
-                      <button
-                        onClick={addTimeline}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.timeline.map((item, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <input
-                            type="text"
-                            className="flex-1 p-2 border rounded mr-2"
-                            placeholder="フェーズ名"
-                            value={item.phase}
-                            onChange={(e) => updateTimeline(idx, 'phase', e.target.value)}
-                          />
-                          <input
-                            type="text"
-                            className="w-32 p-2 border rounded"
-                            placeholder="期間"
-                            value={item.duration}
-                            onChange={(e) => updateTimeline(idx, 'duration', e.target.value)}
-                          />
-                          <button
-                            onClick={() => removeTimeline(idx)}
-                            className="text-red-500 hover:text-red-700 font-bold ml-2"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <textarea
-                          className="w-full p-2 border rounded"
-                          placeholder="タスク内容"
-                          rows="2"
-                          value={item.tasks}
-                          onChange={(e) => updateTimeline(idx, 'tasks', e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* 費用 */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-bold text-lg mb-3">費用</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">初期費用</label>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded"
-                          placeholder="3,000,000"
-                          value={formData.initialCost}
-                          onChange={(e) => setFormData({ ...formData, initialCost: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">月額費用</label>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded"
-                          placeholder="50,000"
-                          value={formData.monthlyCost}
-                          onChange={(e) => setFormData({ ...formData, monthlyCost: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold">追加費用 ({formData.additionalCosts.length}個)</h4>
-                      <button
-                        onClick={addAdditionalCost}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.additionalCosts.map((cost, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
-                        <div className="flex gap-2 mb-2">
-                          <input
-                            type="text"
-                            className="flex-1 p-2 border rounded"
-                            placeholder="費用項目"
-                            value={cost.name}
-                            onChange={(e) => updateAdditionalCost(idx, 'name', e.target.value)}
-                          />
-                          <input
-                            type="text"
-                            className="w-40 p-2 border rounded"
-                            placeholder="金額"
-                            value={cost.amount}
-                            onChange={(e) => updateAdditionalCost(idx, 'amount', e.target.value)}
-                          />
-                          <button
-                            onClick={() => removeAdditionalCost(idx)}
-                            className="text-red-500 hover:text-red-700 font-bold"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded"
-                          placeholder="説明"
-                          value={cost.description}
-                          onChange={(e) => updateAdditionalCost(idx, 'description', e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* まとめポイント */}
-                  <div className="pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">まとめポイント ({formData.summaryPoints.length}個)</h3>
-                      <button
-                        onClick={addSummaryPoint}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                      >
-                        ➕ 追加
-                      </button>
-                    </div>
-                    {formData.summaryPoints.map((point, idx) => (
-                      <div key={idx} className="bg-gray-50 p-3 rounded mb-2 border border-gray-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <input
-                            type="text"
-                            className="w-16 p-1 border rounded text-center"
-                            placeholder="🎯"
-                            value={point.icon}
-                            onChange={(e) => updateSummaryPoint(idx, 'icon', e.target.value)}
-                          />
-                          <button
-                            onClick={() => removeSummaryPoint(idx)}
-                            className="text-red-500 hover:text-red-700 font-bold"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded mb-2"
-                          placeholder="ポイントタイトル"
-                          value={point.title}
-                          onChange={(e) => updateSummaryPoint(idx, 'title', e.target.value)}
-                        />
-                        <textarea
-                          className="w-full p-2 border rounded"
-                          placeholder="説明"
-                          rows="2"
-                          value={point.description}
-                          onChange={(e) => updateSummaryPoint(idx, 'description', e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex space-x-4 mt-6">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-400"
-                  >
-                    ← 戻る
-                  </button>
-                  <button
-                    onClick={generateHTML}
-                    disabled={loading}
-                    className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 disabled:bg-gray-400 flex items-center justify-center"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="animate-spin mr-2">⏳</span>
-                        生成中...
-                      </>
-                    ) : (
-                      <>
-                        <span className="mr-2">📄</span>
-                        提案書生成
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="bg-white rounded-lg shadow-2xl p-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <span className="mr-2 text-green-500">✓</span>
-                  STEP 3: 完成！
-                </h2>
-
-                <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6">
-                  <p className="text-green-800 font-semibold text-lg mb-2">✨ 提案書HTMLが生成されました！</p>
-                  <p className="text-green-700">プレビューを確認して、ダウンロードしてください。</p>
-                </div>
-
-                <div className="flex space-x-4 mb-6">
-                  <button
-                    onClick={downloadHTML}
-                    className="flex-1 bg-indigo-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-indigo-700 flex items-center justify-center"
-                  >
-                    <span className="mr-2">💾</span>
-                    HTMLダウンロード
-                  </button>
-                  <button
-                    onClick={() => setStep(1)}
-                    className="flex-1 bg-gray-300 text-gray-700 py-4 rounded-lg font-bold text-lg hover:bg-gray-400"
-                  >
-                    🔄 新規作成
-                  </button>
-                </div>
-
-                <div className="border-4 border-gray-300 rounded-lg overflow-hidden">
-                  <div className="bg-gray-200 p-3 flex items-center">
-                    <span className="mr-2">👁️</span>
-                    <span className="font-semibold">プレビュー</span>
-                  </div>
-                  <iframe
-                    srcDoc={generatedHTML}
-                    className="w-full h-[600px]"
-                    title="Preview"
-                  />
-                </div>
-              </div>
-            )}
+    <!-- ステップインジケーター -->
+    <div class="max-w-7xl mx-auto px-8 py-6">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center space-x-4">
+          <div id="step1" class="step-indicator step-active px-4 py-2 rounded-full font-semibold">
+            1. 議事録入力
+          </div>
+          <div class="text-gray-400">→</div>
+          <div id="step2" class="step-indicator bg-gray-300 text-gray-600 px-4 py-2 rounded-full font-semibold">
+            2. AI解析
+          </div>
+          <div class="text-gray-400">→</div>
+          <div id="step3" class="step-indicator bg-gray-300 text-gray-600 px-4 py-2 rounded-full font-semibold">
+            3. 提案書生成
           </div>
         </div>
-      );
-    };
+      </div>
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<ProposalGenerator />);
+      <!-- メインコンテンツ -->
+      <div class="bg-white rounded-xl shadow-lg p-8">
+        
+        <!-- STEP 1: 議事録入力 -->
+        <div id="step1-content" class="step-content">
+          <h2 class="text-2xl font-bold mb-6 text-gray-800">
+            📝 STEP 1: 議事録を入力してください
+          </h2>
+          
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              ヒアリング内容・議事録
+            </label>
+            <textarea
+              id="transcript"
+              class="w-full h-64 p-4 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              placeholder="例：
+本日は山田商事様とのミーティングを実施。
+現状の課題：
+- 顧客情報がExcelで管理されており、複数人での同時編集ができない
+- 営業活動の履歴が残らず、担当者が変わると引き継ぎが困難
+- 月次レポート作成に毎回3時間かかっている
+..."
+            ></textarea>
+          </div>
+          
+          <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+            <p class="text-sm text-blue-700">
+              💡 ヒント: 課題、現状、要望などを具体的に記載すると、より精度の高い提案書が生成されます
+            </p>
+          </div>
+          
+          <button
+            onclick="analyzeTranscript()"
+            class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+          >
+            AI解析を開始 →
+          </button>
+        </div>
+
+        <!-- STEP 2: AI解析結果 -->
+        <div id="step2-content" class="step-content hidden">
+          <h2 class="text-2xl font-bold mb-6 text-gray-800">
+            🤖 STEP 2: AI解析結果
+          </h2>
+          
+          <div id="analysis-loading" class="text-center py-12">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">AIが議事録を解析中...</p>
+            <p class="text-sm text-gray-500 mt-2">通常10-20秒かかります</p>
+          </div>
+          
+          <div id="analysis-result" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div class="bg-red-50 p-4 rounded-lg">
+                <h3 class="font-bold text-red-700 mb-3">🔍 検出された課題</h3>
+                <ul id="problems-list" class="space-y-2 text-sm"></ul>
+              </div>
+              <div class="bg-green-50 p-4 rounded-lg">
+                <h3 class="font-bold text-green-700 mb-3">💡 提案ソリューション</h3>
+                <ul id="solutions-list" class="space-y-2 text-sm"></ul>
+              </div>
+            </div>
+            
+            <div class="flex space-x-4">
+              <button
+                onclick="generateProposal()"
+                class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+              >
+                提案書を生成 →
+              </button>
+              <button
+                onclick="backToStep1()"
+                class="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"
+              >
+                ← 議事録を修正
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: 提案書生成 -->
+        <div id="step3-content" class="step-content hidden">
+          <h2 class="text-2xl font-bold mb-6 text-gray-800">
+            ✅ STEP 3: 提案書生成完了
+          </h2>
+          
+          <div id="generation-loading" class="text-center py-12">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">提案書を生成中...</p>
+          </div>
+          
+          <div id="generation-result" class="hidden">
+            <div class="bg-green-100 border-l-4 border-green-500 p-6 mb-6">
+              <p class="text-green-700 font-semibold text-lg mb-2">
+                ✨ 提案書の生成が完了しました！
+              </p>
+              <p class="text-green-600 text-sm">
+                HTMLファイルがダウンロードされます。ブラウザで開いて内容を編集し、PDF保存してください。
+              </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-3xl mb-2">📝</div>
+                <p class="font-semibold">編集可能</p>
+                <p class="text-sm text-gray-600">テキストをクリックして編集</p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-3xl mb-2">📸</div>
+                <p class="font-semibold">画像追加</p>
+                <p class="text-sm text-gray-600">スクリーンショット等を追加</p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-3xl mb-2">📥</div>
+                <p class="font-semibold">PDF出力</p>
+                <p class="text-sm text-gray-600">右上のボタンでPDF保存</p>
+              </div>
+            </div>
+            
+            <div class="flex space-x-4">
+              <button
+                onclick="downloadProposal()"
+                class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+              >
+                📥 提案書をダウンロード
+              </button>
+              <button
+                onclick="startOver()"
+                class="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"
+              >
+                新規作成
+              </button>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let analysisData = null;
+    let proposalHTML = null;
+
+    // STEP 1: 議事録解析
+    async function analyzeTranscript() {
+      const transcript = document.getElementById('transcript').value;
+      
+      if (!transcript.trim()) {
+        alert('議事録を入力してください');
+        return;
+      }
+      
+      // STEP 2へ遷移
+      document.getElementById('step1-content').classList.add('hidden');
+      document.getElementById('step2-content').classList.remove('hidden');
+      document.getElementById('step1').classList.remove('step-active');
+      document.getElementById('step1').classList.add('step-completed');
+      document.getElementById('step2').classList.add('step-active');
+      
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ transcript })
+        });
+        
+        if (!response.ok) {
+          throw new Error('解析に失敗しました');
+        }
+        
+        analysisData = await response.json();
+        
+        // 結果表示
+        displayAnalysisResult(analysisData);
+        
+      } catch (error) {
+        alert('エラーが発生しました: ' + error.message);
+        backToStep1();
+      }
+    }
+
+    // 解析結果を表示
+    function displayAnalysisResult(data) {
+      // 課題リスト
+      const problemsList = document.getElementById('problems-list');
+      problemsList.innerHTML = data.problems.map(p => 
+        `<li>${p.icon} ${p.title}</li>`
+      ).join('');
+      
+      // ソリューションリスト
+      const solutionsList = document.getElementById('solutions-list');
+      solutionsList.innerHTML = data.solutions.map(s => 
+        `<li>${s.icon} ${s.name}</li>`
+      ).join('');
+      
+      // 表示切替
+      document.getElementById('analysis-loading').classList.add('hidden');
+      document.getElementById('analysis-result').classList.remove('hidden');
+    }
+
+    // STEP 2: 提案書生成
+    async function generateProposal() {
+      // STEP 3へ遷移
+      document.getElementById('step2-content').classList.add('hidden');
+      document.getElementById('step3-content').classList.remove('hidden');
+      document.getElementById('step2').classList.remove('step-active');
+      document.getElementById('step2').classList.add('step-completed');
+      document.getElementById('step3').classList.add('step-active');
+      
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data: analysisData })
+        });
+        
+        if (!response.ok) {
+          throw new Error('生成に失敗しました');
+        }
+        
+        const result = await response.json();
+        proposalHTML = result.html;
+        
+        // 結果表示
+        document.getElementById('generation-loading').classList.add('hidden');
+        document.getElementById('generation-result').classList.remove('hidden');
+        
+        // 自動ダウンロード
+        setTimeout(() => {
+          downloadProposal();
+        }, 1000);
+        
+      } catch (error) {
+        alert('エラーが発生しました: ' + error.message);
+        backToStep2();
+      }
+    }
+
+    // 提案書ダウンロード
+    function downloadProposal() {
+      const blob = new Blob([proposalHTML], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date();
+      const filename = `proposal_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.html`;
+      
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // ナビゲーション
+    function backToStep1() {
+      document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById('step1-content').classList.remove('hidden');
+      
+      document.querySelectorAll('.step-indicator').forEach(el => {
+        el.classList.remove('step-active', 'step-completed');
+        el.classList.add('bg-gray-300', 'text-gray-600');
+      });
+      document.getElementById('step1').classList.add('step-active');
+      document.getElementById('step1').classList.remove('bg-gray-300', 'text-gray-600');
+    }
+
+    function backToStep2() {
+      document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById('step2-content').classList.remove('hidden');
+      
+      document.getElementById('step3').classList.remove('step-active', 'step-completed');
+      document.getElementById('step3').classList.add('bg-gray-300', 'text-gray-600');
+      document.getElementById('step2').classList.add('step-active');
+      document.getElementById('step2').classList.remove('step-completed');
+    }
+
+    function startOver() {
+      analysisData = null;
+      proposalHTML = null;
+      document.getElementById('transcript').value = '';
+      backToStep1();
+    }
   </script>
 </body>
 </html>
